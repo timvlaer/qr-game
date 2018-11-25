@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Lift off</title>
+
+  <link rel="stylesheet" href="fontawesome-free-5.5.0-web/css/all.css"/>
+
+  <style type="text/css">
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: black;
+    }
+
+    #mirror, #preview {
+      margin: 0;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+
+    #overlay {
+      width: 100%;
+      height: 100%;
+      position: fixed;
+      left: 0;
+      top: 0;
+      background-color: black;
+      z-index: 100;
+      color: black;
+      font-size: 10em;
+      text-align: center;
+      vertical-align: middle;
+    }
+  </style>
+
+  <script type="text/javascript" src="instascan.min.js"></script>
+  <script type="text/javascript" src="rainbowvis.js"></script>
+  <script type="text/javascript" src="volume-meter.js"></script>
+  <script type="text/javascript" src="volume-meter-main.js"></script>
+  <script type="text/javascript" src="jquery-3.3.1.min.js"></script>
+</head>
+<body>
+<div id="overlay"></div>
+
+<video id="mirror"></video>
+
+<script type="text/javascript" src="murmurhash3_gc.js"></script>
+<script type="text/javascript">
+
+  function hash(str) {
+    return murmurhash3_32_gc(str);
+  }
+
+    let numberOfGroups = 3;
+    let colors = ["red", "blue", "yellow", "green"];
+
+    let fadeOptions = {
+        duration: 4000,
+        easing: "linear"
+    };
+
+    let scanner = new Instascan.Scanner({video: document.getElementById('mirror'), mirror: false});
+    scanner.addListener('scan', function (content) {
+        console.log("scanned: " + content);
+
+        let group = hash(content) % numberOfGroups;
+        $("#overlay").css("background-color", colors[group]).html("Groep " + group).show().fadeOut(fadeOptions);
+    });
+    Instascan.Camera.getCameras().then(function (cameras) {
+        if (cameras.length > 0) {
+            $("#overlay").hide();
+            scanner.start(cameras[0]);
+        } else {
+            console.error('No cameras found.');
+        }
+    }).catch(function (e) {
+        console.error(e);
+    });
+</script>
+</body>
+</html>

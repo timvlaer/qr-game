@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Lift off</title>
+
+  <link rel="stylesheet" href="fontawesome-free-5.5.0-web/css/all.css"/>
+
+  <style type="text/css">
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: black;
+    }
+
+    #mirror, #preview {
+      margin: 0;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+
+    #doors {
+      width: 90%;
+      margin: 0 auto;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 30px;
+      color: white;
+      font-size: 60px;
+    }
+
+    #doors > div {
+      float: left;
+      height: 1.5em;
+      margin: 10px;
+      background: red;
+      border-radius: 0.4em;
+      padding: 0.1em 0.4em;
+      text-align: center;
+    }
+
+    #volume {
+      width: 90%;
+      margin: 0 auto;
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 30px;
+      color: white;
+      font-size: 6em;
+    }
+
+    #volume i.fas {
+      padding: 0.2em;
+    }
+
+    #meter {
+      border: 4px solid white;
+      padding: 4px;
+      width: 85%;
+      height: 10%;
+      float: right;
+    }
+
+    #overlay {
+      width: 100%;
+      height: 100%;
+      position: fixed;
+      left: 0;
+      top: 0;
+      background-color: red;
+      z-index: 100;
+    }
+  </style>
+
+  <script type="text/javascript" src="instascan.min.js"></script>
+  <script type="text/javascript" src="rainbowvis.js"></script>
+  <script type="text/javascript" src="volume-meter.js"></script>
+  <script type="text/javascript" src="volume-meter-main.js"></script>
+  <script type="text/javascript" src="jquery-3.3.1.min.js"></script>
+</head>
+<body>
+<div id="overlay"></div>
+
+<video id="mirror"></video>
+
+<div id="doors">
+  <div id="door1" class="door"><i class="fas fa-lock"></i> 壹</div>
+  <div id="door2" class="door"><i class="fas fa-lock"></i> 貳</div>
+  <div id="door3" class="door"><i class="fas fa-lock"></i> 叄</div>
+  <div id="door4" class="door"><i class="fas fa-lock"></i> 肆</div>
+</div>
+
+<div id="volume">
+  <i class="fas fa-microphone-alt"></i>
+  <canvas id="meter" height="50"></canvas>
+</div>
+
+<script type="text/javascript" src="qrs.js"></script>
+<script type="text/javascript">
+    var started = false;
+    var volumeOffset = 0;
+
+    $("#overlay").hide();
+    var openedDoors = [];
+
+    var fadeOptions = {
+        duration: 2000,
+        easing: "linear"
+    };
+
+    function start() {
+        console.log("Start!");
+        started = true;
+        reset();
+    }
+
+    function reset() {
+        console.log("Reset!");
+        $("#overlay").css("background-color", "black").show().fadeOut(fadeOptions);
+        openedDoors = [];
+        for (let i = 1; i <= 4; i++) {
+            $(".door").css("background-color", "red");
+            $(".door i.fas").removeClass("fa-lock-open").addClass("fa-lock");
+        }
+    }
+
+    let scanner = new Instascan.Scanner({video: document.getElementById('mirror'), mirror: false});
+    scanner.addListener('scan', function (content) {
+        console.log("scanned: " + content);
+        var idx = qrs.indexOf(content) - volumeOffset;
+        if (idx >= 0 && idx < 4) {
+            $("#overlay").css("background-color", "green").show().fadeOut(fadeOptions);
+            $("#door" + idx).css("background-color", "green");
+            $("#door" + idx + " i.fas").removeClass("fa-lock").addClass("fa-lock-open");
+            openedDoors += qrs[content];
+        } else {
+            $("#overlay").css("background-color", "red").show().fadeOut(fadeOptions);
+        }
+
+        if (new Set(openedDoors).size === 4) {
+            console.log("joepie!");
+            $("#overlay").css("background-color", "green").show()
+        }
+    });
+    Instascan.Camera.getCameras().then(function (cameras) {
+        if (cameras.length > 0) {
+            scanner.start(cameras[0]);
+        } else {
+            console.error('No cameras found.');
+        }
+    }).catch(function (e) {
+        console.error(e);
+    });
+</script>
+</body>
+</html>
